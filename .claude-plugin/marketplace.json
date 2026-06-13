@@ -13,6 +13,12 @@
       "source": "./plugins/claudio",
       "version": "1.0.0",
       "description": "Makes Claude a better developer: enforces a strict coding standard, runs a post-implementation quality gate, reviews branch-only diffs, responds to PR/MR review threads, and maintains a ~/.claudio knowledge base of analyzed repos."
+    },
+    {
+      "name": "megaphone",
+      "source": "./plugins/megaphone",
+      "version": "1.0.0",
+      "description": "Sends you native desktop notifications (with a custom icon and per-category sounds) when Claude finishes, errors, needs attention, or asks permission — by default only when you're not looking at the session, and clicking a notification jumps back to the session. Works on macOS, Windows, and Linux."
     }
   ]
 }
