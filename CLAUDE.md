@@ -65,11 +65,11 @@ string is unchanged, `/plugin update` skips it.
 
 - Bump **only the changed plugin's** `plugin.json` version. `bump-version.py` does this
   automatically (patch bump) on every edit under that plugin's directory.
-- Do **not** put `version` in the marketplace entry — `plugin.json` is the single
-  authority, and duplicating it lets a stale value silently win.
-- The marketplace's `metadata.version` is the catalog version only and is **not** bumped
-  on plugin edits; it never affects per-plugin update detection.
-- Never hand-edit a `version` field — let the hook manage it.
+- The plugin's marketplace entry **mirrors** that `plugin.json` version, kept in sync by
+  `update-readme.py`, so the catalog shows it and a marketplace update pulls a plugin only
+  when its version changed. `plugin.json` stays the source of truth.
+- The marketplace has **no** catalog-level version field.
+- Never hand-edit a `version` field anywhere — let the hooks manage it.
 
 ---
 
@@ -172,9 +172,10 @@ Edit:
 | File                              | What is synced                                                       |
 | --------------------------------- | -------------------------------------------------------------------- |
 | `README.md`                       | Plugin table between `<!-- PLUGINS_START -->` / `<!-- PLUGINS_END -->`|
-| `.claude-plugin/marketplace.json` | The `plugins` array — name, source, description (no `version`)       |
+| `.claude-plugin/marketplace.json` | The `plugins` array — name, source, version (mirrors each `plugin.json`), description |
 
-Per-plugin `plugin.json` `version` fields are managed by `bump-version.py`.
+Each plugin's `plugin.json` `version` is the source of truth (bumped by `bump-version.py`)
+and is mirrored into its marketplace entry by `update-readme.py`.
 
 ---
 
