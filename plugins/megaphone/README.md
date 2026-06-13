@@ -66,7 +66,8 @@ sound support) so you still get pinged.
 
 - `settings.md` — editable settings: mute, `muted_until`, `show_always`, `quiet_hours`,
   `dedupe_seconds`, and per-category sound + enable flags.
-- `icon.png` — the notification icon (copied on install for a stable path).
+- `megaphone-icon-<hash>.png` — the notification icon, deployed under a content-versioned
+  name so Windows' per-path toast-image cache always reflects the current icon.
 - `history.log` — a record of every notification attempt.
 - `state.json` — internal dedupe state.
 

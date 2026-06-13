@@ -52,11 +52,11 @@ def setup_home(report):
 
     source_icon = os.path.join(plugin_root(), "assets", "icon.png")
     if os.path.exists(source_icon):
-        try:
-            shutil.copyfile(source_icon, _mega.ICON_PATH)
-            report["actions"].append("Copied notification icon to ~/.megaphone/icon.png")
-        except Exception as error:
-            report["notes"].append(f"Could not copy icon: {error}")
+        deployed = _mega.deploy_icon(source_icon)
+        if deployed:
+            report["actions"].append(f"Deployed notification icon to {deployed}")
+        else:
+            report["notes"].append("Could not deploy the notification icon")
 
 
 def install_macos(report):

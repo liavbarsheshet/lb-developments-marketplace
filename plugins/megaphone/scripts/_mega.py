@@ -17,7 +17,8 @@ HOME = os.path.join(os.path.expanduser("~"), ".megaphone")
 SETTINGS_PATH = os.path.join(HOME, "settings.md")
 HISTORY_PATH = os.path.join(HOME, "history.log")
 STATE_PATH = os.path.join(HOME, "state.json")
-ICON_PATH = os.path.join(HOME, "icon.png")
+ICON_PATH = os.path.join(HOME, "icon.png")  # legacy single-file location (pre-versioning)
+ICON_PREFIX = "megaphone-icon-"
 
 CATEGORIES = ("done", "error", "attention", "permission", "info")
 
@@ -57,6 +58,10 @@ WINSOUND_EVENTS = {
     "SMS": "ms-winsoundevent:Notification.SMS",
     "Alarm": "ms-winsoundevent:Notification.Looping.Alarm",
 }
+
+# Well-known AppUserModelID for Windows PowerShell, used so the module-free WinRT
+# fallback toast is allowed to display without registering a new app shortcut.
+WINRT_APP_ID = "{1AC14E77-02E7-4E5D-B744-2EB1AE5198B7}\\WindowsPowerShell\\v1.0\\powershell.exe"
 
 DEFAULT_SETTINGS = {
     "muted": "false",
@@ -104,21 +109,109 @@ def ensure_home():
     os.makedirs(HOME, exist_ok=True)
 
 
+def _icon_signature(path):
+    """
+    Compute a short content hash of a file, used to version the deployed icon.
+
+    @param {string} path File to hash
+    @returns {string} An 8-char hex digest, or "" when the file cannot be read
+    """
+    try:
+        with open(path, "rb") as handle:
+            return hashlib.sha1(handle.read()).hexdigest()[:8]
+    except Exception:
+        return ""
+
+
+def _prune_icons(keep):
+    """Remove every deployed icon except `keep` (also clears the legacy icon.png)."""
+    try:
+        names = os.listdir(HOME)
+    except Exception:
+        return
+
+    for name in names:
+        if not name.startswith(ICON_PREFIX) and name != os.path.basename(ICON_PATH):
+            continue
+        path = os.path.join(HOME, name)
+        if path == keep:
+            continue
+        try:
+            os.remove(path)
+        except Exception:
+            pass
+
+
+def deployed_icon():
+    """
+    Find the content-versioned icon already deployed under ~/.megaphone.
+
+    @returns {string} The newest deployed icon path, or "" when none exists
+    """
+    try:
+        names = os.listdir(HOME)
+    except Exception:
+        return ""
+
+    candidates = [
+        os.path.join(HOME, name)
+        for name in names
+        if name.startswith(ICON_PREFIX) and name.endswith(".png")
+    ]
+    if not candidates:
+        return ""
+
+    try:
+        return max(candidates, key=os.path.getmtime)
+    except Exception:
+        return ""
+
+
+def deploy_icon(source):
+    """
+    Copy `source` into ~/.megaphone under a content-hashed filename and prune older
+    copies. Because the filename changes whenever the icon's bytes change, Windows'
+    per-path toast-image cache can never serve a stale or blank app logo.
+
+    @param {string} source Path to the source icon (assets/icon.png)
+    @returns {string} The deployed icon path, or "" when it could not be deployed
+    """
+    signature = _icon_signature(source)
+    if not signature:
+        return ""
+
+    ensure_home()
+    target = os.path.join(HOME, f"{ICON_PREFIX}{signature}.png")
+
+    if not os.path.exists(target):
+        try:
+            shutil.copyfile(source, target)
+        except Exception:
+            return ""
+
+    _prune_icons(keep=target)
+    return target
+
+
 def icon_path(plugin_root=None):
     """
-    Resolve the notification icon, preferring the persistent copy in ~/.megaphone.
+    Resolve the notification icon, preferring the content-versioned copy in ~/.megaphone.
 
-    @param {string} plugin_root Optional plugin root to fall back to (assets/icon.png)
+    @param {string} plugin_root Optional plugin root to deploy from (assets/icon.png)
     @returns {string} A path to an existing icon, or "" when none is found
     """
-    if os.path.exists(ICON_PATH):
-        return ICON_PATH
+    deployed = deployed_icon()
+    if deployed:
+        return deployed
 
     root = plugin_root or os.environ.get("CLAUDE_PLUGIN_ROOT")
     if root:
         candidate = os.path.join(root, "assets", "icon.png")
         if os.path.exists(candidate):
-            return candidate
+            return deploy_icon(candidate) or candidate
+
+    if os.path.exists(ICON_PATH):
+        return ICON_PATH
 
     return ""
 
@@ -612,19 +705,92 @@ def _windows_toast_simple(title, body, icon, sound):
     return result.returncode == 0
 
 
-def _send_windows(title, body, icon, sound):
-    if backend_available():
-        hwnd = windows_session_hwnd()
-        if hwnd and _windows_toast_clickable(title, body, icon, sound, hwnd):
-            return True
-        if _windows_toast_simple(title, body, icon, sound):
-            return True
+def _xml_escape(value):
+    """
+    Escape a string for safe inclusion in toast XML text or attribute values.
 
-    # Fallback: balloon tip via Windows Forms (no custom icon/sound control).
+    @param {string} value Raw text
+    @returns {string} XML-escaped text
+    """
+    return (
+        str(value)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+    )
+
+
+def _windows_winrt_toast(title, body, icon, sound):
+    """
+    Show a toast directly through the Windows runtime, without the BurntToast module.
+    Uses the same appLogoOverride binding as the primary path, so the megaphone icon
+    still appears when BurntToast is unavailable or both BurntToast attempts failed.
+
+    @param {string} title Notification headline
+    @param {string} body Notification body
+    @param {string} icon Path to the megaphone icon, or "" when none is available
+    @param {string} sound Resolved BurntToast sound name
+    @returns {bool} True only when the toast was built and shown successfully
+    """
+    image = ""
+    if icon and os.path.exists(icon):
+        image = (
+            f'<image src="{_xml_escape(icon)}" '
+            'placement="appLogoOverride" hint-crop="circle"/>'
+        )
+
+    audio = WINSOUND_EVENTS.get(sound, "ms-winsoundevent:Notification.Default")
+    toast_xml = (
+        '<toast><visual><binding template="ToastGeneric">'
+        f'<text>{_xml_escape(title)}</text>'
+        f'<text>{_xml_escape(body)}</text>'
+        f'{image}</binding></visual>'
+        f'<audio src="{_xml_escape(audio)}"/></toast>'
+    )
+
+    script = (
+        "try {"
+        "[Windows.UI.Notifications.ToastNotificationManager, Windows.UI.Notifications, ContentType = WindowsRuntime] | Out-Null;"
+        "[Windows.Data.Xml.Dom.XmlDocument, Windows.Data.Xml.Dom.XmlDocument, ContentType = WindowsRuntime] | Out-Null;"
+        "$x=New-Object Windows.Data.Xml.Dom.XmlDocument;"
+        f"$x.LoadXml({_ps_quote(toast_xml)});"
+        "$t=New-Object Windows.UI.Notifications.ToastNotification $x;"
+        f"[Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier({_ps_quote(WINRT_APP_ID)}).Show($t);"
+        "'OK_WINRT' } catch { 'FAIL_WINRT' }"
+    )
+    result = subprocess.run(
+        ["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
+        capture_output=True, text=True, timeout=20,
+    )
+    return result.returncode == 0 and "OK_WINRT" in (result.stdout or "")
+
+
+def _windows_balloon_fallback(title, body, icon):
+    """
+    Absolute last-resort notification via a Windows Forms balloon tip, used only when
+    BurntToast and the WinRT toast both fail. Loads the megaphone icon when one is
+    available; otherwise uses the system information icon.
+
+    @param {string} title Notification headline
+    @param {string} body Notification body
+    @param {string} icon Path to the megaphone icon, or "" when none is available
+    @returns {bool} True when the balloon tip was shown
+    """
+    if icon and os.path.exists(icon):
+        load_icon = (
+            f"$bmp=New-Object System.Drawing.Bitmap {_ps_quote(icon)};"
+            "$ico=[System.Drawing.Icon]::FromHandle($bmp.GetHicon());"
+        )
+    else:
+        load_icon = "$ico=[System.Drawing.SystemIcons]::Information;"
+
     script = (
         "Add-Type -AssemblyName System.Windows.Forms;"
+        "Add-Type -AssemblyName System.Drawing;"
+        + load_icon +
         "$n=New-Object System.Windows.Forms.NotifyIcon;"
-        "$n.Icon=[System.Drawing.SystemIcons]::Information;$n.Visible=$true;"
+        "$n.Icon=$ico;$n.Visible=$true;"
         f"$n.ShowBalloonTip(8000,{_ps_quote(title)},{_ps_quote(body)},"
         "[System.Windows.Forms.ToolTipIcon]::Info)"
     )
@@ -633,6 +799,20 @@ def _send_windows(title, body, icon, sound):
         capture_output=True, text=True, timeout=20,
     )
     return result.returncode == 0
+
+
+def _send_windows(title, body, icon, sound):
+    if backend_available():
+        hwnd = windows_session_hwnd()
+        if hwnd and _windows_toast_clickable(title, body, icon, sound, hwnd):
+            return True
+        if _windows_toast_simple(title, body, icon, sound):
+            return True
+
+    if _windows_winrt_toast(title, body, icon, sound):
+        return True
+
+    return _windows_balloon_fallback(title, body, icon)
 
 
 def _send_linux(title, body, icon, sound):

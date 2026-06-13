@@ -17,7 +17,7 @@
     {
       "name": "megaphone",
       "source": "./plugins/megaphone",
-      "version": "1.0.0",
+      "version": "1.0.9",
       "description": "Sends you native desktop notifications (with a custom icon and per-category sounds) when Claude finishes, errors, needs attention, or asks permission — by default only when you're not looking at the session, and clicking a notification jumps back to the session. Works on macOS, Windows, and Linux."
     }
   ]
