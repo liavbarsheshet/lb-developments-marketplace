@@ -15,6 +15,12 @@
       "description": "Makes Claude a better developer: enforces a strict coding standard, runs a post-implementation quality gate, reviews branch-only diffs, responds to PR/MR review threads, and maintains a ~/.claudio knowledge base of analyzed repos."
     },
     {
+      "name": "hermes-tweet",
+      "source": "./plugins/hermes-tweet",
+      "version": "1.0.0",
+      "description": "Guides Hermes Agent X/Twitter work through Hermes Tweet with read-first workflows and approval-gated actions."
+    },
+    {
       "name": "megaphone",
       "source": "./plugins/megaphone",
       "version": "1.0.9",

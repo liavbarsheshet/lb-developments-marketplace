@@ -1,0 +1,11 @@
+{
+  "name": "hermes-tweet",
+  "version": "1.0.0",
+  "description": "Guides Hermes Agent X/Twitter work through Hermes Tweet with read-first workflows and approval-gated actions.",
+  "author": {
+    "name": "kriptoburak"
+  },
+  "homepage": "https://github.com/Xquik-dev/hermes-tweet#readme",
+  "repository": "https://github.com/Xquik-dev/hermes-tweet",
+  "license": "MIT"
+}
