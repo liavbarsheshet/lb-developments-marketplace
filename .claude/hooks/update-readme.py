@@ -94,11 +94,14 @@ def sync_marketplace(infos):
     except Exception:
         return
 
-    # Entries omit `version`: each plugin's plugin.json is the version authority.
+    # Each entry mirrors the plugin's plugin.json version so the catalog shows it and
+    # Claude Code updates a plugin only when its version changes. plugin.json stays the
+    # source of truth (bumped by bump-version.py); this keeps the two in sync.
     data["plugins"] = [
         {
             "name": p["name"],
             "source": f"./{PLUGINS_DIR}/{p['name']}",
+            "version": p["version"],
             "description": p["description"],
         }
         for p in infos

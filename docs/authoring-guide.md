@@ -88,9 +88,9 @@ Only `name` is strictly required if a manifest is present. Recommended fields:
 | `commands`, `agents`, `skills`, `hooks` | string/array | Optional overrides pointing components at non-default paths.                  |
 
 **Versioning (critical):** see [`marketplace-bootstrap.md` § Versioning Model](./marketplace-bootstrap.md#versioning-model-read-this-first).
-Short version: `version` lives in `plugin.json` only — never duplicate it into the
-marketplace entry (`plugin.json` silently wins). In this repo, `bump-version.py` manages
-it automatically.
+Short version: each plugin's `version` lives in its `plugin.json` (the source of truth,
+bumped by `bump-version.py`) and is mirrored into its marketplace entry by
+`update-readme.py` so the catalog shows it. There is no catalog-level marketplace version.
 
 ---
 
