@@ -10,7 +10,9 @@ install only what you need.
 <!-- PLUGINS_START -->
 <!-- Auto-generated. Do not edit by hand. -->
 
-_No plugins available yet._
+| Plugin | Version | Description | Author |
+| ------ | ------- | ----------- | ------ |
+| [`claudio`](./plugins/claudio/README.md) | 1.0.0 | Makes Claude a better developer: enforces a strict coding standard, runs a post-implementation quality gate, reviews branch-only diffs, responds to PR/MR review threads, and maintains a ~/.claudio knowledge base of analyzed repos. | Liav Barsheshet |
 
 <!-- PLUGINS_END -->
 

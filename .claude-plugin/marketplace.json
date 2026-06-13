@@ -8,5 +8,11 @@
     "version": "1.0.0",
     "pluginRoot": "./plugins"
   },
-  "plugins": []
+  "plugins": [
+    {
+      "name": "claudio",
+      "source": "./plugins/claudio",
+      "description": "Makes Claude a better developer: enforces a strict coding standard, runs a post-implementation quality gate, reviews branch-only diffs, responds to PR/MR review threads, and maintains a ~/.claudio knowledge base of analyzed repos."
+    }
+  ]
 }
