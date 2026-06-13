@@ -13,7 +13,7 @@ install only what you need.
 | Plugin | Version | Description | Author |
 | ------ | ------- | ----------- | ------ |
 | [`claudio`](./plugins/claudio/README.md) | 1.0.0 | Makes Claude a better developer: enforces a strict coding standard, runs a post-implementation quality gate, reviews branch-only diffs, responds to PR/MR review threads, and maintains a ~/.claudio knowledge base of analyzed repos. | Liav Barsheshet |
-| [`megaphone`](./plugins/megaphone/README.md) | 1.0.0 | Sends you native desktop notifications (with a custom icon and per-category sounds) when Claude finishes, errors, needs attention, or asks permission — by default only when you're not looking at the session, and clicking a notification jumps back to the session. Works on macOS, Windows, and Linux. | Liav Barsheshet |
+| [`megaphone`](./plugins/megaphone/README.md) | 1.0.8 | Sends you native desktop notifications (with a custom icon and per-category sounds) when Claude finishes, errors, needs attention, or asks permission — by default only when you're not looking at the session, and clicking a notification jumps back to the session. Works on macOS, Windows, and Linux. | Liav Barsheshet |
 
 <!-- PLUGINS_END -->
 
