@@ -111,8 +111,15 @@ def sync_marketplace(infos):
 def main():
     try:
         data = json.load(sys.stdin)
-        modified = data.get("tool_input", {}).get("file_path", "").replace("\\", "/")
-        if modified.endswith(README_PATH) or modified.endswith("marketplace.json"):
+        raw = data.get("tool_input", {}).get("file_path", "")
+        modified = raw.replace("\\", "/")
+        try:
+            rel = os.path.relpath(raw, os.getcwd()).replace("\\", "/")
+        except Exception:
+            rel = modified
+        # Skip only the auto-generated ROOT files; plugin READMEs must pass through
+        # so their changes resync the catalog.
+        if rel in (README_PATH, MARKETPLACE):
             sys.exit(0)
     except Exception:
         pass
