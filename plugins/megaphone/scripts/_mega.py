@@ -158,11 +158,13 @@ def deployed_icon():
         for name in names
         if name.startswith(ICON_PREFIX) and name.endswith(".png")
     ]
-    candidates = [path for path in candidates if os.path.exists(path)]
     if not candidates:
         return ""
 
-    return max(candidates, key=os.path.getmtime)
+    try:
+        return max(candidates, key=os.path.getmtime)
+    except Exception:
+        return ""
 
 
 def deploy_icon(source):
