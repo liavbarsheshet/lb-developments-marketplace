@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          { "type": "command", "command": "python .claude/hooks/check-branch.py" }
+        ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          { "type": "command", "command": "python .claude/hooks/check-plugin-exists.py" }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          { "type": "command", "command": "python .claude/hooks/bump-version.py" },
+          { "type": "command", "command": "python .claude/hooks/update-readme.py" },
+          { "type": "command", "command": "python .claude/hooks/test-plugin.py" }
+        ]
+      }
+    ]
+  }
+}

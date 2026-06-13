@@ -1,0 +1,12 @@
+{
+  "name": "lb-developments-marketplace",
+  "owner": {
+    "name": "liavbarsheshet"
+  },
+  "metadata": {
+    "description": "lb-developments-marketplace — team plugin marketplace",
+    "version": "1.0.0",
+    "pluginRoot": "./plugins"
+  },
+  "plugins": []
+}
