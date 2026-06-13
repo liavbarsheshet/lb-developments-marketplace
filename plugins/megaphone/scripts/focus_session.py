@@ -40,7 +40,8 @@ def focus_windows():
 
         hwnd = int(match.group(1))
         user32 = ctypes.windll.user32
-        user32.ShowWindow(hwnd, 9)          # SW_RESTORE
+        if user32.IsIconic(hwnd):           # only un-minimize a minimized window;
+            user32.ShowWindow(hwnd, 9)      # SW_RESTORE (don't un-maximize otherwise)
         user32.SetForegroundWindow(hwnd)
     except Exception:
         pass

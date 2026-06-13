@@ -127,7 +127,10 @@ def register_windows_protocol(report):
         return
 
     python = sys.executable or "python"
-    command = f'"{python}" "{target}" "%1"'
+    # Prefer the windowless interpreter so a clicked toast doesn't flash a console window.
+    pythonw = os.path.join(os.path.dirname(python), "pythonw.exe")
+    launcher = pythonw if os.path.exists(pythonw) else python
+    command = f'"{launcher}" "{target}" "%1"'
     script = (
         "$b='HKCU:\\Software\\Classes\\megaphone';"
         "New-Item -Path $b -Force | Out-Null;"
